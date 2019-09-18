@@ -1,0 +1,16 @@
+WSF2 - Fastest 2-minute wind speed
+WSF5 - Fastest 5-second wind speed
+SNOW - Snowfall
+WT03 - Thunder
+PRCP - Precipitation
+WT08 - Smoke or haze 
+SNWD - Snow depth
+WDF2 - Direction of fastest 2-minute wind
+AWND - Average wind speed
+WDF5 - Direction of fastest 5-second wind
+PGTM - Peak gust time
+WT01 - Fog, ice fog, or freezing fog (may include heavy fog)
+TMAX - Maximum temperature
+WT02 - Heavy fog or heaving freezing fog (not always distinguished from fog)
+TAVG - Average Temperature
+TMIN - Minimum temperature

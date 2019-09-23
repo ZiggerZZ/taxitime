@@ -45,24 +45,5 @@ weather[boolean_fields] = weather[boolean_fields].fillna(0)
 # weather data is not unique by day, so for now we will take the average of each column 
 weather_data_grouped = weather.groupby('DATE', as_index=False).mean()
 
-def join_to_weather(airport_df, weather_data_grouped):
-	
-	'''
-	Input original airport dataframe and treated weather dataframe and return a dataframe joined on day that has 
-	all columns from both dataframes, excluding the join keys
-	'''
-	weather_data_grouped['DATE'] = weather_data_grouped.DATE.apply(split_date_time,1) #change to timestamp
-	weather_data_grouped['DATE_join'] = weather_data_grouped['DATE'].astype(str) #create join col
-	airport_df['landing_day_join'] = airport_df['actual_landing_time'].dt.date.astype(str) #create join col
-
-
-	# merge weather data and airport df
-	df_weather = airport_df.merge(weather_data_grouped, how='left', left_on='landing_day_join', right_on='DATE_join')
-
-	df_weather.drop(['DATE', 'DATE_join', 'landing_day_join', 'index'], axis = 1, inplace = True)
-	weather_data_grouped.drop(['DATE', 'DATE_join'], axis=1, inplace = True)
-
-	return df_weather
-
 weather_data_grouped.to_csv('../data/weather_data.csv', index=False)
 

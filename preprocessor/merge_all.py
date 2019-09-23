@@ -10,7 +10,7 @@ ac = pd.read_csv(link_ac)
 we = pd.read_csv(link_weather)
 
 # merge aircraft
-df = pd.merge(df, ac, how="left", on="acType")
+df = pd.merge(df, ac, how="left", on="acType", )
 
 # merge weather
 we['DATE'] = we.DATE.apply(split_date_time,1) #change to timestamp

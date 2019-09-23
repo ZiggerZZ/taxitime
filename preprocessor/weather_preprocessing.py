@@ -39,11 +39,11 @@ boolean_fields = ['fog,_ice_fog,_or_freezing_fog_(incl_heavy_fog)',
                   'thunder',
                   'smoke_or_haze']
 
-# replace nulls with 0
-weather[boolean_fields] = weather[boolean_fields].fillna(0)
-
 # weather data is not unique by day, so for now we will take the average of each column 
 weather_data_grouped = weather.groupby('DATE', as_index=False).mean()
+
+# replace nulls with 0
+weather_data_grouped[boolean_fields] = weather_data_grouped[boolean_fields].fillna(0)
 
 weather_data_grouped.to_csv('../data/weather_data.csv', index=False)
 

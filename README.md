@@ -8,10 +8,10 @@ This is a project in cooperation with Eleven Strategy.
 
 This directory contains the files with the code that preprocesses the raw input data. There are 4 main files:
 
-* [Aircraft Data Processing](preprocessing/aircraft_preprocessing.py): Preprocesses aircraft data and outputs treated data in data/aircraft_data.csv 
-* [Airport Data Processing](preprocessing/airport_preprocessing.py): Preprocesses airport data and outputs treated data in data/airport_data.csv
-* [Weather Data Processing](preprocessing/weather_preprocessing.py): Preprocesses weather data and outputs treated data in data/weather_data.csv
-* [Merge Input Data](preprocessing/merge_all.py): To be run after preprocessing files to merge the three datasets into one large dataframe, output in data/complete_data.csv
+* [Aircraft Data Processing](preprocessor/aircraft_preprocessing.py): Preprocesses aircraft data and outputs treated data in data/aircraft_data.csv 
+* [Airport Data Processing](preprocessor/airport_preprocessing.py): Preprocesses airport data and outputs treated data in data/airport_data.csv
+* [Weather Data Processing](preprocessor/weather_preprocessing.py): Preprocesses weather data and outputs treated data in data/weather_data.csv
+* [Merge Input Data](preprocessor/merge_all.py): To be run after preprocessing files to merge the three datasets into one large dataframe, output in data/complete_data.csv
 
 ## EDA
 

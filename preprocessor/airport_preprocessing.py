@@ -2,29 +2,14 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from split_date import split_date_time
+import logging
 
-link = 'https://raw.githubusercontent.com/ZiggerZZ/taxitime/master/Taxi-time%20Prediction%20Data/0.%20Airport%20data/Airport_Data.csv'
-df = pd.read_csv(link)
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-
-def get_traffic_metric(row, df):
-    
-    # TODO: change to a more efficient function
-    
-    index = row['index']
-    df = df[max(index - 1000,0) :index-1] 
-    count = len(df[(df['actual_inblock_time_sec'] > row['actual_landing_time_sec']) &
-                       (df['actual_landing_time_sec'] < row['actual_landing_time_sec'])])
-    return count
-
-def get_runway_traffic_metric(row, df):
-    # change to a more efficient 
-    index = row['index']
-    df = df[max(index - 1000,0) :index-1]
-    count = len(df[(df['actual_inblock_time_sec'] > row['actual_landing_time_sec']) &
-                       (df['actual_landing_time_sec'] < row['actual_landing_time_sec']) & 
-                       (df['runway'] == row['runway'])])
-    return count
+# link = 'https://raw.githubusercontent.com/ZiggerZZ/taxitime/master/Taxi-time%20Prediction%20Data/0.%20Airport%20data/Airport_Data.csv'
+test_set_link = '../test_data/test_set_airport_data.csv'
+df = pd.read_csv(test_set_link)
+logging.info('Original Dataframe length: ' + str(len(df)))
 
 def count_elem_in_list(input_list):
     cnt = Counter()
@@ -76,6 +61,7 @@ not_used = [
 df.drop(columns = not_used, inplace = True)
 df = df[df['aibt'] != 'aibt'] # drop 159 weird rows
 df = df.dropna(subset=['aldt','aibt']) # drop NA for arrival and block time 
+logging.info('Length after dropping NA for arrival and in block time: '+ str(len(df)))
 
 # Rename and convert columns
 df['actual_landing_time'] = df.aldt.apply(split_date_time)
@@ -105,6 +91,7 @@ df.dropna(inplace = True)
 # remove outliers
 treshold = 200
 df = df[df.t_minutes < treshold] 
+logging.info('Length after removing outliers: ' + str(len(df)))
 
 # change actual_landing_time to a day level
 df["date"] = df.actual_landing_time.dt.date
@@ -112,8 +99,7 @@ df.groupby("date").mean().plot(figsize = (20, 8))
 
 # add time data
 df['week_of_year'] = df.actual_landing_time.dt.week
-dayOfWeek={0
-           :'Monday', 1:'Tuesday', 2:'Wednesday', 3:'Thursday', 4:'Friday', 5:'Saturday', 6:'Sunday'}
+dayOfWeek={0:'Monday', 1:'Tuesday', 2:'Wednesday', 3:'Thursday', 4:'Friday', 5:'Saturday', 6:'Sunday'}
 df['day_of_week'] = df.actual_landing_time.dt.dayofweek.map(dayOfWeek)
 df['minutes_of_day'] = df.actual_landing_time.dt.hour * 60 + df.actual_landing_time.dt.minute
 
@@ -127,23 +113,20 @@ df['t_min_calculated'] = (df['calculated_inblock_time'] - df['actual_landing_tim
 
 # add traffic metric which counts the number of planes on the grounds for a particular arrival
 df = df.sort_values('actual_landing_time', ascending=True)
-df.reset_index(drop = True)
+df = df.reset_index(drop = True)
 
 df['index'] = df.index # create column with index
 df['actual_landing_time_sec'] = df['actual_landing_time'].astype('int64')
 df['actual_inblock_time_sec'] = df['actual_inblock_time'].astype('int64')
 
-print('traffic metric start')
-# count all planes on grounds at arrival
-df['traffic_metric'] = df.apply(lambda x: get_traffic_metric(x, df),1)
 
-print('traffic metric runway start')
-# count only planes that were on the same runway at arrival
-df['traffic_metric_runway'] = df.apply(lambda x: get_runway_traffic_metric(x,df),1)
-
-print('runway start')
+logging.info('Calculating traffic metric (for all runways)')
 # count the planes on other runways at time of arrival
 df['runway_dict'] = df.apply(lambda x: get_all_runway_traffic_metric(x,df),1)
+
+logging.info('Calculating traffic metric (same runway traffic)')
+# count only planes that were on the same runway at arrival
+df['traffic_metric_runway'] = df.apply(lambda x: x['runway_dict'].get(x['runway']),1)
 
 df['traffic_metric_runway_1']  = df['runway_dict'].apply(lambda x: x.get('RUNWAY01'),1)
 df['traffic_metric_runway_2']  = df['runway_dict'].apply(lambda x: x.get('RUNWAY02'),1)
@@ -155,7 +138,11 @@ df['traffic_metric_runway_7']  = df['runway_dict'].apply(lambda x: x.get('RUNWAY
 df['traffic_metric_runway_8']  = df['runway_dict'].apply(lambda x: x.get('RUNWAY08'),1)
 df['traffic_metric_runway_9']  = df['runway_dict'].apply(lambda x: x.get('RUNWAY09'),1)
 df['traffic_metric_runway_10']  = df['runway_dict'].apply(lambda x: x.get('RUNWAY10'),1)
-# df.drop('runway_dict',inplace=True)
 
-df.to_csv('../data/airport_data.csv', index=False)
+# count all planes on grounds at arrival
+df['traffic_metric'] = df['runway_dict'].apply(lambda x: sum(x.values()) if x != {} else 0)
+df.drop('runway_dict',inplace=True, axis=1)
+df[[x for x in df.columns if 'traffic' in x]] = df[[x for x in df.columns if 'traffic' in x]].astype(float).fillna(0)
+
+df.to_csv('../data/test_airport_data.csv', index=False)
 

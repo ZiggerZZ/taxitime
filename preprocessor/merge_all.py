@@ -2,10 +2,11 @@ import pandas as pd
 from split_date import split_date_time
 
 link_ac = '../data/aircraft_data.csv'
-link_ap = '../data/airport_data.csv'
+# link_ap = '../data/airport_data.csv'
+test_link_ap = '../data/test_airport_data.csv'
 link_weather = '../data/weather_data.csv'
 
-df = pd.read_csv(link_ap)
+df = pd.read_csv(test_link_ap)
 ac = pd.read_csv(link_ac)
 we = pd.read_csv(link_weather)
 
@@ -70,4 +71,4 @@ df['landing_day_join'] = df['actual_landing_time'].dt.date.astype(str) #create j
 df = df.merge(we, how='left', left_on='landing_day_join', right_on='DATE_join')
 df.drop(['DATE', 'DATE_join', 'landing_day_join', 'index'], axis = 1, inplace = True)
 
-df.to_csv('../data/complete_data.csv', index=False)
+df.to_csv('../data/test_complete_data.csv', index=False)

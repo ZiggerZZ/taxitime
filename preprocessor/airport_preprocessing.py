@@ -1,24 +1,33 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
-from split_date import split_date_time
+from utilxsplit_date import split_date_time
 import logging
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-# link = 'https://raw.githubusercontent.com/ZiggerZZ/taxitime/master/Taxi-time%20Prediction%20Data/0.%20Airport%20data/Airport_Data.csv'
-test_set_link = '../test_data/test_set_airport_data.csv'
+link = 'https://raw.githubusercontent.com/ZiggerZZ/taxitime/master/Taxi-time%20Prediction%20Data/0.%20Airport%20data/Airport_Data.csv'
+
+# for generating processed test data 
+# test_set_link = '../test_data/test_set_airport_data.csv'
+
 df = pd.read_csv(test_set_link)
 logging.info('Original Dataframe length: ' + str(len(df)))
 
 def count_elem_in_list(input_list):
+	'''
+	Returns dictionary with key as element and value as number of instances element occurs in list
+	'''
     cnt = Counter()
     for word in input_list:
         cnt[word] += 1
     return dict(cnt)
 
 def get_all_runway_traffic_metric(row, df):
-    # change to a more efficient 
+    '''
+    Returns dictionay with traffic metric per runway
+    '''
+
     index = row['index']
     
     df = df[max(index - 1000,0) :index]
@@ -63,7 +72,10 @@ df = df[df['aibt'] != 'aibt'] # drop 159 weird rows
 df = df.dropna(subset=['aldt','aibt']) # drop NA for arrival and block time 
 logging.info('Length after dropping NA for arrival and in block time: '+ str(len(df)))
 
-# Rename and convert columns
+####################################
+## Convert Time Columns to datetime
+#################################### 
+
 df['actual_landing_time'] = df.aldt.apply(split_date_time)
 df['actual_inblock_time'] = df.aibt.apply(split_date_time)
 
@@ -83,15 +95,21 @@ df.plb_off.isnull().sum() == df.shape[0] # all values are NaN so it's dropped
 colToDrop = ['aldt', 'aibt', 'sto', 'eibt', 'cibt', 'chocks_on', 'plb_off', 'eobt', 'aobt', 'atot']
 df.drop(columns = colToDrop, inplace= True)
 
-
 # Remove empty columns
 df.drop(columns = ['estimated_off_block_time', 'actual_off_block_time', 'actual_take_off_time'], inplace= True)
 df.dropna(inplace = True)
 
-# remove outliers
+####################################
+## Remove Outliers above Threshold 
+#################################### 
+
 treshold = 200
 df = df[df.t_minutes < treshold] 
 logging.info('Length after removing outliers: ' + str(len(df)))
+
+####################################
+## Additional Time Columns
+####################################
 
 # change actual_landing_time to a day level
 df["date"] = df.actual_landing_time.dt.date
@@ -111,17 +129,22 @@ df['land_to_off'] = (df['scheduled_time_off'] - df['actual_landing_time']).apply
 df['t_min_estimated'] = (df['estimated_inblock_time'] - df['actual_landing_time']).apply(lambda x: x.seconds/60)
 df['t_min_calculated'] = (df['calculated_inblock_time'] - df['actual_landing_time']).apply(lambda x: x.seconds/60)
 
+####################################
+## Traffic Metric 
+####################################
+
 # add traffic metric which counts the number of planes on the grounds for a particular arrival
 df = df.sort_values('actual_landing_time', ascending=True)
 df = df.reset_index(drop = True)
 
 df['index'] = df.index # create column with index
+
+# convert time fields to seconds for easier comparison
 df['actual_landing_time_sec'] = df['actual_landing_time'].astype('int64')
 df['actual_inblock_time_sec'] = df['actual_inblock_time'].astype('int64')
 
-
 logging.info('Calculating traffic metric (for all runways)')
-# count the planes on other runways at time of arrival
+# count the planes on each runways at time of arrival
 df['runway_dict'] = df.apply(lambda x: get_all_runway_traffic_metric(x,df),1)
 
 logging.info('Calculating traffic metric (same runway traffic)')
@@ -142,6 +165,8 @@ df['traffic_metric_runway_10']  = df['runway_dict'].apply(lambda x: x.get('RUNWA
 # count all planes on grounds at arrival
 df['traffic_metric'] = df['runway_dict'].apply(lambda x: sum(x.values()) if x != {} else 0)
 df.drop('runway_dict',inplace=True, axis=1)
+
+# Convert all traffic metrics to float and fill in null values with 0
 df[[x for x in df.columns if 'traffic' in x]] = df[[x for x in df.columns if 'traffic' in x]].astype(float).fillna(0)
 
 df.to_csv('../data/test_airport_data.csv', index=False)

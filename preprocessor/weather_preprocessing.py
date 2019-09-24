@@ -6,6 +6,7 @@ from math import floor
 weather_link = 'https://raw.githubusercontent.com/ZiggerZZ/taxitime/master/Taxi-time%20Prediction%20Data/2.%20Weather%20data/weather_data_prep.csv'
 weather = pd.read_csv(weather_link)
 
+# rename columns for ease of comprehension
 rename_dict = {'WSF2': 'fastest_2_minute_wind_speed',
  'WSF5': 'fastest_5_second_wind_speed',
  'PRCP': 'precipitation',
@@ -43,6 +44,7 @@ boolean_fields = ['fog,_ice_fog,_or_freezing_fog_(incl_heavy_fog)',
 weather_data_grouped = weather.groupby('DATE', as_index=False).mean()
 
 # replace nulls with 0
+# must be done post grouping (otherwise the mean will take the 0s into consideration)
 weather_data_grouped[boolean_fields] = weather_data_grouped[boolean_fields].fillna(0)
 
 weather_data_grouped.to_csv('../data/weather_data.csv', index=False)
